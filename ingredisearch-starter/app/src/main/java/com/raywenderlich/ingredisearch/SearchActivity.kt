@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2018 Razeware LLC
  *
@@ -31,24 +30,58 @@
 
 package com.raywenderlich.ingredisearch
 
+import android.content.Context
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.view.inputmethod.InputMethodManager
 import kotlinx.android.synthetic.main.activity_search.*
 
-class SearchActivity : ChildActivity() {
+class SearchActivity : ChildActivity(), SearchPresenter.View {
 
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_search)
+    private val presenter = SearchPresenter()
 
-    searchButton.setOnClickListener {
-      val query = ingredients.text.toString().trim()
-      if (query.isBlank()) {
-        Snackbar.make(searchButton, getString(R.string.search_query_required), Snackbar
-            .LENGTH_LONG).show()
-      } else {
-        startActivity(searchResultsIntent(query))
-      }
+    override fun showSearchResults(results: String) {
+        startActivity(searchResultsIntent(results))
     }
-  }
+
+    override fun showQueryRequiredMessage() {
+
+        // Hide keyboard
+        val view = this.currentFocus
+        if (view != null) {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+
+        Snackbar.make(searchButton, getString(R.string.search_query_required), Snackbar
+                .LENGTH_LONG).show()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_search)
+
+        presenter.attachView(this)
+
+        searchButton.setOnClickListener {
+
+
+            val query = ingredients.text.toString()
+
+            presenter.search(query)
+
+//            if (query.isBlank()) {
+//                Snackbar.make(searchButton, getString(R.string.search_query_required), Snackbar
+//                        .LENGTH_LONG).show()
+//            } else {
+//                startActivity(searchResultsIntent(query))
+//            }
+        }
+    }
+
+    override fun onDestroy() {
+
+        presenter.detachView()
+        super.onDestroy()
+    }
 }
